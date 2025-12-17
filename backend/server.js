@@ -20,7 +20,9 @@ const allowedOrigins = [
 const isAllowedOrigin = (origin) => {
   if (!origin) return true
   if (allowedOrigins.includes(origin)) return true
-  // Allow any http origin on port 3000 (e.g. http://192.168.x.x:3000)
+  // Allow Vercel hosted frontends (production and previews)
+  if (/^https?:\/\/([a-z0-9-]+\.)*vercel\.app(:\d+)?$/.test(origin)) return true
+  // Allow any http origin on port 3000 (local dev)
   return /^http:\/\/[^:]+:3000$/.test(origin)
 }
 
