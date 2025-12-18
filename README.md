@@ -73,17 +73,88 @@ Socket.IO (real-time)
 
 Architecture diagram
 --------------------
-Frontend <==HTTP/REST==> Backend API (Express)
-				 \\                |
-					\\--Socket.IO----/  (real-time)
-												 |
-												 v
-											 MongoDB
 
-Notes:
-- Backend encrypts messages before saving; server stores `message` (hex) and `iv`.
+**System Architecture:**
 
-Encryption & Authentication (simple explanation)
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         CLIENT LAYER                               │
+│  ┌────────────────────────────────────────────────────────────┐   │
+│  │  React Frontend (Browser)                                 │   │
+│  │  • Login & Registration                                   │   │
+│  │  • Chat UI (Private & Group)                             │   │
+│  │  • User Management                                        │   │
+│  └────────────────────────────────────────────────────────────┘   │
+└─────────────────┬──────────────────┬──────────────────────────────┘
+                  │                  │
+         HTTP/REST│              WebSocket│
+                  │ (JWT Auth)        │ (Socket.IO)
+                  │                  │
+      ┌───────────▼──────┬──────────▼───────────────┐
+      │ COMMUNICATION    │  COMMUNICATION           │
+      │ REST Routes      │  Real-time (Socket.IO)   │
+      │ (/auth, /chat,   │  • Send & Receive msgs   │
+      │  /group)         │  • Online Status         │
+      └───────────┬──────┴──────────┬───────────────┘
+                  │                │
+      ┌───────────▼────────────────▼────────────────┐
+      │     BACKEND (Node.js + Express)            │
+      │                                            │
+      │  ┌─ Authentication Module (JWT + bcrypt) │
+      │  ├─ Chat Service (msg encryption)        │
+      │  ├─ Group Service                        │
+      │  ├─ Socket.IO Event Handler              │
+      │  └─ Message Encryption (AES-256-CBC)    │
+      └─────────────┬──────────────────────────────┘
+                    │
+        ┌───────────▼───────────────┐
+        │   DATA LAYER              │
+        │ ┌──────────────────────┐ │
+        │ │  MongoDB             │ │
+        │ │  • Users             │ │
+        │ │  • Messages (enc)    │ │
+        │ │  • Groups            │ │
+        │ └──────────────────────┘ │
+        └──────────────────────────┘
+```
+
+**Detailed Flow:**
+1. User opens React app → frontend connects via REST + Socket.IO
+2. Login → password hashed with bcrypt, JWT tokens issued
+3. Socket authenticated with access token during handshake
+4. Chat message sent → encrypted server-side (AES-256-CBC) → stored in MongoDB
+5. Real-time delivery via Socket.IO to connected clients
+6. Message retrieval → decrypted before response
+
+**Project File Structure:**
+```
+Secure_chat_app/
+├── backend/
+│   ├── auth.js          # JWT & password logic
+│   ├── chat.js          # Private chat routes
+│   ├── group.js         # Group chat routes
+│   ├── server.js        # Express + Socket.IO setup
+│   ├── models.js        # MongoDB schemas (User, Message, Group)
+│   ├── encrypt.js       # AES-256-CBC encryption/decryption
+│   ├── middleware.js    # JWT verification middleware
+│   ├── db.js            # MongoDB connection
+│   ├── package.json
+│   └── .env             # Config (secrets, keys, MONGO_URI)
+├── frontend/
+│   ├── src/
+│   │   ├── App.js       # Main React component
+│   │   ├── Login.js     # Auth page
+│   │   ├── Register.js  # Registration page
+│   │   ├── Chat.js      # Chat interface
+│   │   ├── api.js       # Axios client
+│   │   ├── index.js     # Entry point
+│   │   └── ...
+│   └── package.json
+├── README.md
+└── architecture.drawio  # Detailed architecture diagram
+```
+
+**Open `architecture.drawio` in [diagrams.net](https://diagrams.net/) for the full interactive diagram.**
 -----------------------------------------------
 - Encryption: The server uses AES-256-CBC (`encrypt.js`) with a 32-byte `ENCRYPTION_KEY` from `.env` to encrypt message text. Each message uses a random 16-byte IV saved alongside the ciphertext. On read, the server decrypts using the stored IV and key.
 - Passwords: Users' passwords are hashed with `bcrypt` before saving.
