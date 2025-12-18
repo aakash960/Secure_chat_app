@@ -73,22 +73,24 @@ Socket.IO (real-time)
 
 Architecture diagram
 --------------------
-Frontend <==HTTP/REST==> Backend API (Express)
-				 \\                |
-					\\--Socket.IO----/  (real-time)
-												 |
-												 v
-											 MongoDB
+![Architecture Diagram](./architecture.png)
 
-For a detailed architecture diagram, see [architecture.drawio](./architecture.drawio) (open with draw.io or VS Code extension).
+For source/editable version, see [architecture.drawio](./architecture.drawio) (open with draw.io or VS Code extension).
 
-	- Refresh token stored as an `httpOnly` cookie to obtain new access tokens via `/auth/refresh`.
+Notes:
+- Backend encrypts messages before saving; server stores `message` (hex) and `iv`.
+
+Encryption & Authentication (simple explanation)
+-----------------------------------------------
+- Encryption: The server uses AES-256-CBC (`encrypt.js`) with a 32-byte `ENCRYPTION_KEY` from `.env` to encrypt message text. Each message uses a random 16-byte IV saved alongside the ciphertext. On read, the server decrypts using the stored IV and key.
+- Passwords: Users' passwords are hashed with `bcrypt` before saving.
+- Authentication: The app issues two tokens:
+  - Access token (JWT) returned by `/auth/login` and used in `Authorization: Bearer <token>` header for protected REST endpoints.
+  - Refresh token stored as an `httpOnly` cookie to obtain new access tokens via `/auth/refresh`.
 - Socket authentication: The Socket.IO connection is verified by providing the access token in the socket handshake; the server verifies the token before allowing socket operations.
 
 Troubleshooting & tips
 ----------------------
 - Ensure `ENCRYPTION_KEY` is exactly 32 bytes (for AES-256-CBC). You can generate one locally with Node or openssl.
 - If sockets fail to connect, check `FRONTEND_URL` in `.env` or use `http://localhost:3000` during local dev.
-
-If you want, I can also add postman examples or a sequence diagram next.
 
