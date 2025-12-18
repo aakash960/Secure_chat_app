@@ -80,15 +80,8 @@ Frontend <==HTTP/REST==> Backend API (Express)
 												 v
 											 MongoDB
 
-Notes:
-- Backend encrypts messages before saving; server stores `message` (hex) and `iv`.
+For a detailed architecture diagram, see [architecture.drawio](./architecture.drawio) (open with draw.io or VS Code extension).
 
-Encryption & Authentication (simple explanation)
------------------------------------------------
-- Encryption: The server uses AES-256-CBC (`encrypt.js`) with a 32-byte `ENCRYPTION_KEY` from `.env` to encrypt message text. Each message uses a random 16-byte IV saved alongside the ciphertext. On read, the server decrypts using the stored IV and key.
-- Passwords: Users' passwords are hashed with `bcrypt` before saving.
-- Authentication: The app issues two tokens:
-	- Access token (JWT) returned by `/auth/login` and used in `Authorization: Bearer <token>` header for protected REST endpoints.
 	- Refresh token stored as an `httpOnly` cookie to obtain new access tokens via `/auth/refresh`.
 - Socket authentication: The Socket.IO connection is verified by providing the access token in the socket handshake; the server verifies the token before allowing socket operations.
 
