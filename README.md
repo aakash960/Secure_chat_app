@@ -154,8 +154,9 @@ Secure_chat_app/
 └── architecture.drawio  # Detailed architecture diagram
 ```
 
-**Open `architecture.drawio` in [diagrams.net](https://diagrams.net/) for the full interactive diagram.**
------------------------------------------------
+**Open the interactive diagram:** [architecture.drawio](./architecture.drawio) (edit in [diagrams.net](https://diagrams.net/))
+
+Encryption & Authentication (simple explanation)
 - Encryption: The server uses AES-256-CBC (`encrypt.js`) with a 32-byte `ENCRYPTION_KEY` from `.env` to encrypt message text. Each message uses a random 16-byte IV saved alongside the ciphertext. On read, the server decrypts using the stored IV and key.
 - Passwords: Users' passwords are hashed with `bcrypt` before saving.
 - Authentication: The app issues two tokens:
